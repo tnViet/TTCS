@@ -1,0 +1,12 @@
+Base_Data/
+skin_data/
+skin-web/venv/
+models/
+
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+
+.vscode/

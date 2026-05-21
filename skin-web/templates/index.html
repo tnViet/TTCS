@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Disease Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- TOP NAV -->
+    <nav class="top-nav">
+        <div class="nav-inner">
+            <div class="nav-left">
+                <div class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect width="24" height="24" rx="4" fill="#5645d4"/>
+                        <path d="M7 7h4v10H7V7zm6 0h4v10h-4V7z" fill="#fff" opacity="0.9"/>
+                    </svg>
+                    <span class="logo-text">SkinScan</span>
+                </div>
+                <span class="nav-divider"></span>
+                <span class="nav-label">Phân tích da liễu AI</span>
+            </div>
+            <div class="nav-right">
+                <span class="badge-tag-purple">Demo v1.0</span>
+                <span class="badge-tag-green">Local</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO BAND -->
+    <section class="hero-band">
+        <div class="hero-inner">
+            <div class="hero-dots">
+                <span class="dot dot-pink"></span>
+                <span class="dot dot-yellow"></span>
+                <span class="dot dot-teal"></span>
+                <span class="dot dot-orange"></span>
+                <span class="dot dot-purple"></span>
+            </div>
+            <h1 class="hero-title">Phát hiện bệnh da liễu</h1>
+            <p class="hero-subtitle">
+                Upload ảnh vùng da — AI phân tích và đưa ra dự đoán top bệnh có khả năng nhất.
+                Hỗ trợ 14 loại bệnh da thường gặp.
+            </p>
+        </div>
+    </section>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="content-grid">
+            <!-- LEFT: Upload -->
+            <div class="upload-section">
+                <div class="card-feature">
+                    <h3 class="heading-4">Upload ảnh</h3>
+                    <p class="body-sm steel">Chấp nhận JPG, PNG. Tối đa 16MB.</p>
+
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <rect width="48" height="48" rx="12" fill="#e6e0f5"/>
+                                <path d="M24 16v16M16 24h16" stroke="#5645d4" stroke-width="2.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <p class="body-md charcoal">Kéo thả ảnh vào đây</p>
+                        <p class="body-sm steel">hoặc nhấn để chọn file</p>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="preview-wrapper" id="previewWrapper" style="display:none;">
+                        <div class="preview-card">
+                            <img id="previewImg" src="" alt="Preview">
+                            <button class="btn-ghost" id="clearBtn">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                                Xóa ảnh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analyze button -->
+                    <button class="btn-primary" id="analyzeBtn" disabled>
+                        <span class="btn-text">Phân tích ảnh</span>
+                        <span class="btn-loading" style="display:none;">
+                            <span class="spinner"></span>
+                            Đang phân tích...
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="card-warning">
+                    <div class="warning-icon">⚠️</div>
+                    <div>
+                        <p class="body-sm-medium charcoal">Lưu ý quan trọng</p>
+                        <p class="caption steel">
+                            Kết quả chỉ mang tính tham khảo, không thay thế chẩn đoán của bác sĩ.
+                            Model được train chủ yếu trên ảnh da trắng — độ chính xác có thể thấp hơn với da vàng/da tối.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Results -->
+            <div class="results-section">
+                <!-- Empty state -->
+                <div class="card-feature results-empty" id="emptyState">
+                    <div class="empty-icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                            <rect width="64" height="64" rx="16" fill="#f6f5f4"/>
+                            <circle cx="32" cy="28" r="10" stroke="#a4a097" stroke-width="2"/>
+                            <path d="M22 46c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#a4a097" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="heading-5 steel">Chưa có kết quả</h3>
+                    <p class="body-sm stone">Upload ảnh và nhấn "Phân tích" để bắt đầu</p>
+                </div>
+
+                <!-- Results card (hidden initially) -->
+                <div class="results-card" id="resultsCard" style="display:none;">
+                    <!-- Top prediction -->
+                    <div class="top-prediction" id="topPrediction">
+                        <div class="top-prediction-header">
+                            <span class="badge-purple">Dự đoán hàng đầu</span>
+                        </div>
+                        <div class="top-prediction-body">
+                            <span class="top-icon" id="topIcon"></span>
+                            <div>
+                                <h2 class="heading-3" id="topClassVi"></h2>
+                                <p class="body-sm steel" id="topClassEn"></p>
+                            </div>
+                        </div>
+                        <div class="confidence-bar-wrapper">
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="topConfFill"></div>
+                            </div>
+                            <span class="confidence-label heading-4" id="topConfLabel"></span>
+                        </div>
+                    </div>
+
+                    <!-- All predictions -->
+                    <div class="all-predictions">
+                        <h4 class="heading-5">Tất cả kết quả</h4>
+                        <div class="prediction-list" id="predictionList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUPPORTED DISEASES -->
+        <section class="disease-grid-section">
+            <h3 class="heading-4">14 bệnh được hỗ trợ</h3>
+            <div class="disease-grid">
+                {% for cls in classes %}
+                {% set d = display.get(cls, {"vi": cls, "icon": "❓"}) %}
+                <div class="disease-chip">
+                    <span class="disease-chip-icon">{{ d.icon }}</span>
+                    <div>
+                        <span class="body-sm-medium charcoal">{{ d.vi }}</span>
+                        <span class="caption steel">{{ cls }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer-region">
+        <div class="footer-inner">
+            <p class="body-sm steel">SkinScan — Skin Disease Detection Demo</p>
+            <p class="caption stone">EfficientNetB0 · Transfer Learning · 14 classes · Chạy local</p>
+        </div>
+    </footer>
+
+    <script>
+        const uploadZone  = document.getElementById('uploadZone');
+        const fileInput   = document.getElementById('fileInput');
+        const previewWrap = document.getElementById('previewWrapper');
+        const previewImg  = document.getElementById('previewImg');
+        const analyzeBtn  = document.getElementById('analyzeBtn');
+        const clearBtn    = document.getElementById('clearBtn');
+        const emptyState  = document.getElementById('emptyState');
+        const resultsCard = document.getElementById('resultsCard');
+
+        let selectedFile = null;
+
+        // --- Upload zone ---
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) handleFile(fileInput.files[0]);
+        });
+        clearBtn.addEventListener('click', clearSelection);
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Vui lòng chọn file ảnh (JPG, PNG)');
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                uploadZone.style.display = 'none';
+                previewWrap.style.display = 'block';
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearSelection() {
+            selectedFile = null;
+            fileInput.value = '';
+            previewImg.src = '';
+            uploadZone.style.display = 'flex';
+            previewWrap.style.display = 'none';
+            analyzeBtn.disabled = true;
+            resultsCard.style.display = 'none';
+            emptyState.style.display = 'flex';
+        }
+
+        // --- Analyze ---
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const btnText = analyzeBtn.querySelector('.btn-text');
+            const btnLoad = analyzeBtn.querySelector('.btn-loading');
+            btnText.style.display = 'none';
+            btnLoad.style.display = 'inline-flex';
+            analyzeBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const res = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                showResults(data);
+            } catch (err) {
+                alert('Lỗi kết nối server: ' + err.message);
+            } finally {
+                btnText.style.display = 'inline';
+                btnLoad.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function showResults(data) {
+            emptyState.style.display = 'none';
+            resultsCard.style.display = 'block';
+
+            const top = data.top;
+            document.getElementById('topIcon').textContent = top.icon;
+            document.getElementById('topClassVi').textContent = top.class_vi;
+            document.getElementById('topClassEn').textContent = top.class_en;
+            document.getElementById('topConfLabel').textContent = top.confidence + '%';
+
+            const fill = document.getElementById('topConfFill');
+            fill.style.width = '0%';
+            requestAnimationFrame(() => {
+                fill.style.width = top.confidence + '%';
+            });
+
+            // Color based on confidence
+            const topCard = document.getElementById('topPrediction');
+            if (top.confidence >= 70) {
+                topCard.className = 'top-prediction conf-high';
+            } else if (top.confidence >= 40) {
+                topCard.className = 'top-prediction conf-mid';
+            } else {
+                topCard.className = 'top-prediction conf-low';
+            }
+
+            // All results
+            const list = document.getElementById('predictionList');
+            list.innerHTML = '';
+
+            // Show top 5
+            data.results.slice(0, 5).forEach((r, i) => {
+                const row = document.createElement('div');
+                row.className = 'prediction-row' + (i === 0 ? ' top-row' : '');
+                row.innerHTML = `
+                    <span class="pred-rank">${i + 1}</span>
+                    <span class="pred-icon">${r.icon}</span>
+                    <div class="pred-info">
+                        <span class="body-sm-medium charcoal">${r.class_vi}</span>
+                        <span class="caption steel">${r.class_en}</span>
+                    </div>
+                    <div class="pred-bar-wrap">
+                        <div class="pred-bar">
+                            <div class="pred-bar-fill" style="width:${r.confidence}%;transition-delay:${i * 80}ms"></div>
+                        </div>
+                    </div>
+                    <span class="pred-conf body-sm-medium">${r.confidence}%</span>
+                `;
+                list.appendChild(row);
+
+                // Animate
+                requestAnimationFrame(() => {
+                    const barFill = row.querySelector('.pred-bar-fill');
+                    barFill.style.width = r.confidence + '%';
+                });
+            });
+
+            // Scroll to results on mobile
+            if (window.innerWidth < 768) {
+                resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    </script>
+</body>
+</html>
