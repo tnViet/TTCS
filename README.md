@@ -112,20 +112,6 @@ Skin Disease Detection/
 
 ---
 
-## 🧠 Huấn luyện model
-
-Sử dụng notebook `skin_disease_v3.ipynb` trên Google Colab:
-
-### Chiến lược huấn luyện 3 giai đoạn
-
-| Giai đoạn | Mô tả | Learning Rate | Val Accuracy |
-|---|---|---|---|
-| Phase 1 | Base frozen, train Custom Head | 1e-3 | 57.5% |
-| Phase 2 | Fine-tune, BN frozen | 1e-5 | 61.0% |
-| Phase 3 | Fine-tune, lr tăng | 1e-4 | **70.2%** |
-
----
-
 ## 🚀 Cài đặt và chạy
 
 ### Yêu cầu
