@@ -24,13 +24,13 @@
                 <span class="nav-label">Phân tích da liễu AI</span>
             </div>
             <div class="nav-right">
-                <span class="badge-tag-purple">Demo v1.0</span>
-                <span class="badge-tag-green">Local</span>
+                <span class="badge-tag-purple">Trần Ngọc Việt</span>
+                <span class="badge-tag-green">B23DCCN924</span>
             </div>
         </div>
     </nav>
 
-    <!-- HERO BAND -->
+    <!-- HERO -->
     <section class="hero-band">
         <div class="hero-inner">
             <div class="hero-dots">
@@ -41,16 +41,14 @@
                 <span class="dot dot-purple"></span>
             </div>
             <h1 class="hero-title">Phát hiện bệnh da liễu</h1>
-            <p class="hero-subtitle">
-                Upload ảnh vùng da — AI phân tích và đưa ra dự đoán top bệnh có khả năng nhất.
-                Hỗ trợ 14 loại bệnh da thường gặp.
-            </p>
+            <p class="hero-subtitle">Upload ảnh vùng da — AI phân tích và đưa ra dự đoán kèm heatmap giải thích.</p>
         </div>
     </section>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN -->
     <main class="main-content">
         <div class="content-grid">
+
             <!-- LEFT: Upload -->
             <div class="upload-section">
                 <div class="card-feature">
@@ -69,7 +67,6 @@
                         <input type="file" id="fileInput" accept="image/*" hidden>
                     </div>
 
-                    <!-- Preview -->
                     <div class="preview-wrapper" id="previewWrapper" style="display:none;">
                         <div class="preview-card">
                             <img id="previewImg" src="" alt="Preview">
@@ -82,25 +79,19 @@
                         </div>
                     </div>
 
-                    <!-- Analyze button -->
                     <button class="btn-primary" id="analyzeBtn" disabled>
                         <span class="btn-text">Phân tích ảnh</span>
                         <span class="btn-loading" style="display:none;">
-                            <span class="spinner"></span>
-                            Đang phân tích...
+                            <span class="spinner"></span>Đang phân tích...
                         </span>
                     </button>
                 </div>
 
-                <!-- Disclaimer -->
                 <div class="card-warning">
                     <div class="warning-icon">⚠️</div>
                     <div>
                         <p class="body-sm-medium charcoal">Lưu ý quan trọng</p>
-                        <p class="caption steel">
-                            Kết quả chỉ mang tính tham khảo, không thay thế chẩn đoán của bác sĩ.
-                            Model được train chủ yếu trên ảnh da trắng — độ chính xác có thể thấp hơn với da vàng/da tối.
-                        </p>
+                        <p class="caption steel">Kết quả chỉ mang tính tham khảo, không thay thế chẩn đoán bác sĩ. Dataset chủ yếu ảnh da trắng — độ chính xác có thể thấp hơn với da vàng/da tối.</p>
                     </div>
                 </div>
             </div>
@@ -108,7 +99,7 @@
             <!-- RIGHT: Results -->
             <div class="results-section">
                 <!-- Empty state -->
-                <div class="card-feature results-empty" id="emptyState">
+                <div class="results-empty" id="emptyState">
                     <div class="empty-icon">
                         <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
                             <rect width="64" height="64" rx="16" fill="#f6f5f4"/>
@@ -120,8 +111,18 @@
                     <p class="body-sm stone">Upload ảnh và nhấn "Phân tích" để bắt đầu</p>
                 </div>
 
-                <!-- Results card (hidden initially) -->
-                <div class="results-card" id="resultsCard" style="display:none;">
+                <!-- Results -->
+                <div id="resultsCard" style="display:none;">
+
+                    <!-- Low confidence warning -->
+                    <div id="lowConfWarning" class="card-warning" style="display:none; margin-bottom:16px;">
+                        <div class="warning-icon">⚠️</div>
+                        <div>
+                            <p class="body-sm-medium charcoal">Độ tin cậy thấp</p>
+                            <p class="caption steel">Model không tự tin về kết quả này (dưới 60%). Hãy thử ảnh rõ hơn hoặc chụp gần vùng tổn thương hơn.</p>
+                        </div>
+                    </div>
+
                     <!-- Top prediction -->
                     <div class="top-prediction" id="topPrediction">
                         <div class="top-prediction-header">
@@ -142,18 +143,41 @@
                         </div>
                     </div>
 
-                    <!-- All predictions -->
-                    <div class="all-predictions">
-                        <h4 class="heading-5">Tất cả kết quả</h4>
+                    <!-- Top-5 -->
+                    <div class="all-predictions" style="margin-top:16px;">
+                        <h4 class="heading-5">Top 5 dự đoán</h4>
                         <div class="prediction-list" id="predictionList"></div>
                     </div>
+
+             
+                    <div class="gradcam-section" id="gradcamSection" style="margin-top:16px;">
+                        <div class="gradcam-header">
+                            <h4 class="heading-5">🔍 Grad-CAM — Vùng AI tập trung</h4>
+                            <p class="body-sm steel">Màu đỏ/vàng = AI chú ý nhiều &nbsp;|&nbsp; Màu xanh = ít chú ý</p>
+                        </div>
+                        <div class="gradcam-images">
+                            <div class="gradcam-img-wrap">
+                                <p class="caption steel" style="text-align:center; margin-bottom:6px;">Ảnh gốc</p>
+                                <img id="originalImg" src="" alt="Original" class="gradcam-img">
+                            </div>
+                            <div class="gradcam-img-wrap">
+                                <p class="caption steel" style="text-align:center; margin-bottom:6px;">Heatmap overlay</p>
+                                <img id="gradcamImg" src="" alt="Grad-CAM" class="gradcam-img">
+                            </div>
+                        </div>
+                        <p class="caption stone" style="margin-top:8px;">
+                            Nếu vùng đỏ tập trung vào tổn thương da --> model học đúng.
+                            Nếu tập trung vào nền ảnh --> kết quả kém tin cậy hơn.
+                        </p>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <!-- SUPPORTED DISEASES -->
+        <!-- Disease grid -->
         <section class="disease-grid-section">
-            <h3 class="heading-4">14 bệnh được hỗ trợ</h3>
+            <h3 class="heading-4">11 bệnh được hỗ trợ</h3>
             <div class="disease-grid">
                 {% for cls in classes %}
                 {% set d = display.get(cls, {"vi": cls, "icon": "❓"}) %}
@@ -169,14 +193,6 @@
         </section>
     </main>
 
-    <!-- FOOTER -->
-    <footer class="footer-region">
-        <div class="footer-inner">
-            <p class="body-sm steel">SkinScan — Skin Disease Detection Demo</p>
-            <p class="caption stone">EfficientNetB0 · Transfer Learning · 14 classes · Chạy local</p>
-        </div>
-    </footer>
-
     <script>
         const uploadZone  = document.getElementById('uploadZone');
         const fileInput   = document.getElementById('fileInput');
@@ -189,30 +205,18 @@
 
         let selectedFile = null;
 
-        // --- Upload zone ---
         uploadZone.addEventListener('click', () => fileInput.click());
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('drag-over');
-        });
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('drag-over');
-        });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
         uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('drag-over');
+            e.preventDefault(); uploadZone.classList.remove('drag-over');
             if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length) handleFile(fileInput.files[0]);
-        });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
         clearBtn.addEventListener('click', clearSelection);
 
         function handleFile(file) {
-            if (!file.type.startsWith('image/')) {
-                alert('Vui lòng chọn file ảnh (JPG, PNG)');
-                return;
-            }
+            if (!file.type.startsWith('image/')) { alert('Vui lòng chọn file ảnh'); return; }
             selectedFile = file;
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -232,13 +236,11 @@
             previewWrap.style.display = 'none';
             analyzeBtn.disabled = true;
             resultsCard.style.display = 'none';
-            emptyState.style.display = 'flex';
+            emptyState.style.display  = 'flex';
         }
 
-        // --- Analyze ---
         analyzeBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
-
             const btnText = analyzeBtn.querySelector('.btn-text');
             const btnLoad = analyzeBtn.querySelector('.btn-loading');
             btnText.style.display = 'none';
@@ -249,56 +251,48 @@
             formData.append('file', selectedFile);
 
             try {
-                const res = await fetch('/predict', { method: 'POST', body: formData });
+                const res  = await fetch('/predict', { method: 'POST', body: formData });
                 const data = await res.json();
-
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-
+                if (data.error) { alert(data.error); return; }
                 showResults(data);
             } catch (err) {
                 alert('Lỗi kết nối server: ' + err.message);
             } finally {
                 btnText.style.display = 'inline';
                 btnLoad.style.display = 'none';
-                analyzeBtn.disabled = false;
+                analyzeBtn.disabled   = false;
             }
         });
 
         function showResults(data) {
-            emptyState.style.display = 'none';
+            emptyState.style.display  = 'none';
             resultsCard.style.display = 'block';
 
+            // Low confidence warning
+            document.getElementById('lowConfWarning').style.display =
+                data.low_confidence ? 'flex' : 'none';
+
+            // Top prediction
             const top = data.top;
-            document.getElementById('topIcon').textContent = top.icon;
-            document.getElementById('topClassVi').textContent = top.class_vi;
-            document.getElementById('topClassEn').textContent = top.class_en;
+            document.getElementById('topIcon').textContent     = top.icon;
+            document.getElementById('topClassVi').textContent  = top.class_vi;
+            document.getElementById('topClassEn').textContent  = top.class_en;
             document.getElementById('topConfLabel').textContent = top.confidence + '%';
 
             const fill = document.getElementById('topConfFill');
             fill.style.width = '0%';
-            requestAnimationFrame(() => {
-                fill.style.width = top.confidence + '%';
-            });
+            requestAnimationFrame(() => { fill.style.width = top.confidence + '%'; });
 
-            // Color based on confidence
             const topCard = document.getElementById('topPrediction');
-            if (top.confidence >= 70) {
-                topCard.className = 'top-prediction conf-high';
-            } else if (top.confidence >= 40) {
-                topCard.className = 'top-prediction conf-mid';
-            } else {
-                topCard.className = 'top-prediction conf-low';
-            }
+            topCard.className = 'top-prediction ' + (
+                top.confidence >= 70 ? 'conf-high' :
+                top.confidence >= 40 ? 'conf-mid'  : 'conf-low'
+            );
 
-            // All results
+            // Top-5 list
             const list = document.getElementById('predictionList');
             list.innerHTML = '';
-
-            // Show top 5
-            data.results.slice(0, 5).forEach((r, i) => {
+            data.results.forEach((r, i) => {
                 const row = document.createElement('div');
                 row.className = 'prediction-row' + (i === 0 ? ' top-row' : '');
                 row.innerHTML = `
@@ -310,21 +304,20 @@
                     </div>
                     <div class="pred-bar-wrap">
                         <div class="pred-bar">
-                            <div class="pred-bar-fill" style="width:${r.confidence}%;transition-delay:${i * 80}ms"></div>
+                            <div class="pred-bar-fill" style="transition-delay:${i*80}ms"></div>
                         </div>
                     </div>
                     <span class="pred-conf body-sm-medium">${r.confidence}%</span>
                 `;
                 list.appendChild(row);
-
-                // Animate
                 requestAnimationFrame(() => {
-                    const barFill = row.querySelector('.pred-bar-fill');
-                    barFill.style.width = r.confidence + '%';
+                    row.querySelector('.pred-bar-fill').style.width = r.confidence + '%';
                 });
             });
 
-            // Scroll to results on mobile
+            document.getElementById('originalImg').src = data.original_img;
+            document.getElementById('gradcamImg').src  = data.gradcam_img;
+
             if (window.innerWidth < 768) {
                 resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }

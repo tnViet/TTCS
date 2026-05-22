@@ -1,5 +1,5 @@
 """
-11 class thường gặp, chia train / val / test = 70 / 15 / 15
+11 class, chia train / val / test = 70 / 15 / 15
 
 """
 
@@ -22,11 +22,9 @@ MIN_IMAGES  = 100   # bỏ qua class có ít hơn số này
 
 IMAGE_EXTS  = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
-# ============================================================
-# 14 CLASS — tên thư mục gốc -> tên ngắn dùng trong model
-# ============================================================
+
 CLASS_MAP = {
-    # --- Nhóm 1: có ở cả 2 dataset ---
+    # có ở cả 2 dataset
     "Acne and Rosacea Photos":                                  "acne_rosacea",
     "Eczema Photos":                                            "eczema",
     "Atopic Dermatitis Photos":                                 "atopic_dermatitis",
@@ -35,7 +33,7 @@ CLASS_MAP = {
     "Warts Molluscum and other Viral Infections":               "warts",
     "Exanthems and Drug Eruptions":                             "drug_eruptions",
     "Bullous Disease Photos":                                   "bullous_disease",
-    # --- Nhóm 2: chỉ có ở Dermnet ---
+    # chỉ có ở Dermnet 
     "Hair Loss Photos Alopecia and other Hair Diseases":        "alopecia",
     "Nail Fungus and other Nail Disease":                       "nail_fungus",
     "Scabies Lyme Disease and other Infestations and Bites":    "scabies",
@@ -123,7 +121,7 @@ def main():
             f"test={split_counts['test']:>3d}"
         )
 
-    # Tong ket
+
     print("\n" + "=" * 65)
     total_imgs = sum(sum(v.values()) for v in stats.values())
     print(f"  Classes thanh cong : {len(stats)}")
@@ -134,7 +132,7 @@ def main():
     print(f"  Tong anh da copy   : {total_imgs:,}")
     print("=" * 65)
 
-    # Luu class_names.json
+    # class_names.json
     class_names = sorted(stats.keys())
     out_json = Path(OUTPUT_DIR) / "class_names.json"
     out_json.parent.mkdir(parents=True, exist_ok=True)
