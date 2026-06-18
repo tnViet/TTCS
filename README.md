@@ -58,7 +58,11 @@ Mô hình được huấn luyện theo 3 giai đoạn:
 | Phase 2   | Mở khoảng 45% lớp cuối của backbone để fine-tune nhẹ     |
 | Phase 3   | Mở khoảng 80% lớp cuối của backbone để fine-tune sâu hơn |
 
+## EfficientNetV2B0 training curves
+
 ![EfficientNetV2B0 training curves](models/effnetv2b0/training_curves.png)
+
+## DenseNet121 training curves
 
 ![DenseNet121 training curves](models/densenet121/training_curves.png)
 
