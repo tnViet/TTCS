@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Tra cứu lịch sử — SkinScan{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+  <div class="hero">
+    <h1 class="hero-title">Tra cứu lịch sử khám</h1>
+    <p class="hero-sub">Nhập số điện thoại để xem các lần phân tích da liễu của bạn</p>
+  </div>
+
+  <!-- Search bar -->
+  <div class="history-search glass" style="padding:1.25rem; max-width:600px; margin:0 auto 2rem;">
+    <div class="form-group" style="flex:1">
+      <label class="form-label" for="search-phone">Số điện thoại</label>
+      <input type="tel" class="form-control" id="search-phone"
+             placeholder="Nhập số điện thoại của bạn..."
+             onkeydown="if(event.key==='Enter') searchHistory()">
+    </div>
+    <button class="btn btn-primary" onclick="searchHistory()" id="search-btn"
+            style="align-self:flex-end">
+      🔍 Tìm kiếm
+    </button>
+  </div>
+
+  <!-- Results area -->
+  <div id="history-results">
+    <div class="no-results" id="history-placeholder">
+      <div class="nr-icon">📋</div>
+      <div>Nhập số điện thoại và nhấn Tìm kiếm để xem lịch sử</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

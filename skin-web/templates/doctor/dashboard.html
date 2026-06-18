@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Bác sĩ — SkinScan{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div>
+      <h1>🏥 Dashboard Bác sĩ</h1>
+      <div style="font-size:0.85rem;color:var(--clr-text-muted)">Xin chào, {{ doctor_name }}</div>
+    </div>
+    <span style="flex:1"></span>
+    <!-- Stats -->
+    <div class="dashboard-stats" id="dash-stats">
+      <div class="stat-card">
+        <div class="stat-val" id="stat-total">—</div>
+        <div class="stat-lbl">Tổng ca</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-pending">—</div>
+        <div class="stat-lbl">Chưa xem xét</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-reviewed">—</div>
+        <div class="stat-lbl">Đã ghi chú</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">Tất cả</button>
+    <button class="filter-btn" id="filter-pending" onclick="setFilter('pending')">⏳ Chưa xem xét</button>
+    <button class="filter-btn" id="filter-reviewed" onclick="setFilter('reviewed')">✅ Đã ghi chú</button>
+  </div>
+
+  <!-- Cases list -->
+  <div class="cases-list" id="cases-list">
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div>Đang tải danh sách ca...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Disease choices for JS -->
+<script>
+window.DISEASE_CHOICES = [
+  {% for key, label in disease_choices %}
+  { key: "{{ key }}", label: "{{ label }}" }{% if not loop.last %},{% endif %}
+  {% endfor %}
+];
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/doctor.js') }}"></script>
+{% endblock %}

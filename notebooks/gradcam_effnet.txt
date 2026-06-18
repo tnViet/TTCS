@@ -1,0 +1,103 @@
+﻿--- EFFNET CELL 19 ---
+def build_model(num_classes):
+    inputs = keras.Input(shape=(IMG_SIZE[0], IMG_SIZE[1], 3), name="image")
+    x = data_augmentation(inputs)
+    x = layers.Activation("linear", dtype="float32", name="cast_to_float32")(x)
+    x = preprocess_input(x)
+
+    backbone = tf.keras.applications.EfficientNetV2B0(include_top=False, weights="imagenet", input_shape=(IMG_SIZE[0], IMG_SIZE[1], 3))
+    backbone.trainable = False
+
+    x = backbone(x, training=False)
+    x = layers.GlobalAveragePooling2D(name="gap")(x)
+    x = layers.BatchNormalization(name="bn_head")(x)
+    x = layers.Dropout(0.45, name="dropout_1")(x)
+    x = layers.Dense(256, activation="relu", name="dense_256")(x)
+    x = layers.Dropout(0.35, name="dropout_2")(x)
+
+    outputs = layers.Dense(
+        num_classes,
+        activation="softmax",
+        dtype="float32",
+        name="predictions"
+    )(x)
+
+    model = keras.Model(inputs, outputs, name="EfficientNetV2B0")
+    return model, backbone
+
+model, backbone = build_model(NUM_CLASSES)
+model.summary()
+
+--- EFFNET CELL 37 ---
+def make_gradcam_heatmap(img_array, model, pred_index=None):
+    # Output cß╗ºa backbone call = input cß╗ºa layer "gap"
+    gap_layer = model.get_layer("gap")
+    conv_output_tensor = gap_layer.input  # tensor (batch, H, W, C) trong graph cß╗ºa model
+
+    grad_model = keras.Model(
+        inputs=model.input,
+        outputs=[conv_output_tensor, model.output],
+    )
+
+    img_tensor = tf.cast(img_array, tf.float32)
+    with tf.GradientTape() as tape:
+        conv_outputs, predictions = grad_model(img_tensor, training=False)
+        tape.watch(conv_outputs)
+        if pred_index is None:
+            pred_index = int(tf.argmax(predictions[0]))
+        class_channel = predictions[:, pred_index]
+
+    grads = tape.gradient(class_channel, conv_outputs)
+    if grads is None:
+        raise ValueError("Gradient is None. Run tf.config.run_functions_eagerly(True) first.")
+
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    conv_outputs_np = conv_outputs[0].numpy()
+    pooled_grads_np = pooled_grads.numpy()
+
+    heatmap = np.sum(conv_outputs_np * pooled_grads_np, axis=-1)
+    heatmap = np.maximum(heatmap, 0)
+    heatmap = heatmap / (np.max(heatmap) + 1e-8)
+    return heatmap
+
+
+def show_gradcam(image_path, model):
+    img = keras.utils.load_img(image_path, target_size=IMG_SIZE)
+    img_array = keras.utils.img_to_array(img).astype("float32")
+    input_array = np.expand_dims(img_array, axis=0)
+
+    preds = model(input_array, training=False).numpy()[0]
+    pred_idx = int(np.argmax(preds))
+    pred_name = CLASS_NAMES[pred_idx]
+    conf = preds[pred_idx]
+
+    heatmap = make_gradcam_heatmap(input_array, model, pred_idx)
+    heatmap_resized = cv2.resize(heatmap.astype("float32"), IMG_SIZE)
+
+    heatmap_uint8 = np.uint8(255 * heatmap_resized)
+    heatmap_color = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
+    heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+
+    overlay = np.clip(np.uint8(0.45 * heatmap_color + 0.55 * img_array), 0, 255)
+
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4))
+    axes[0].imshow(np.uint8(img_array)); axes[0].axis("off"); axes[0].set_title("Original")
+    axes[1].imshow(heatmap_resized, cmap="jet"); axes[1].axis("off"); axes[1].set_title("Heatmap")
+    axes[2].imshow(overlay); axes[2].axis("off"); axes[2].set_title(f"{pred_name}\n{conf*100:.1f}%")
+    plt.tight_layout()
+    plt.show()
+
+--- EFFNET CELL 38 ---
+tf.config.run_functions_eagerly(True)
+
+all_test_imgs = []
+for cls in CLASS_NAMES:
+    all_test_imgs.extend(glob.glob(str(TEST_DIR / cls / "*.jpg")))
+    all_test_imgs.extend(glob.glob(str(TEST_DIR / cls / "*.jpeg")))
+    all_test_imgs.extend(glob.glob(str(TEST_DIR / cls / "*.png")))
+
+sample_imgs = random.sample(all_test_imgs, min(4, len(all_test_imgs)))
+for p in sample_imgs:
+    print(p)
+    show_gradcam(p, best_model)
+

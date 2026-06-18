@@ -1,327 +1,120 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skin Disease Detection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-</head>
-<body>
-    <!-- TOP NAV -->
-    <nav class="top-nav">
-        <div class="nav-inner">
-            <div class="nav-left">
-                <div class="logo">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect width="24" height="24" rx="4" fill="#5645d4"/>
-                        <path d="M7 7h4v10H7V7zm6 0h4v10h-4V7z" fill="#fff" opacity="0.9"/>
-                    </svg>
-                    <span class="logo-text">SkinScan</span>
-                </div>
-                <span class="nav-divider"></span>
-                <span class="nav-label">Phân tích da liễu AI</span>
-            </div>
-            <div class="nav-right">
-                <span class="badge-tag-purple">Trần Ngọc Việt</span>
-                <span class="badge-tag-green">B23DCCN924</span>
-            </div>
+{% extends "base.html" %}
+
+{% block title %}SkinScan — Phân tích ảnh da liễu bằng AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1 class="hero-title">Phân tích bệnh da liễu bằng AI</h1>
+
+  </div>
+
+  <!-- Input bar: tên + SĐT + model + nút -->
+  <div class="glass input-bar">
+    <div class="form-group">
+      <label class="form-label" for="full-name">Họ và tên</label>
+      <input type="text" class="form-control" id="full-name"
+             placeholder="Nguyễn Văn A" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="phone-number">Số điện thoại</label>
+      <input type="tel" class="form-control" id="phone-number"
+             placeholder="0901234567" autocomplete="tel">
+    </div>
+    <div class="form-group model-group">
+      <label class="form-label" for="model-select">Mô hình AI</label>
+      <select class="form-control" id="model-select">
+        {% for m in models %}
+          <option value="{{ m.key }}">{{ m.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" id="analyze-btn" onclick="startAnalysis()" disabled>
+      <span id="btn-icon">🔍</span>
+      <span id="btn-text">Phân tích ảnh</span>
+    </button>
+  </div>
+
+  <!-- Split layout -->
+  <div class="split-layout">
+
+    <!-- LEFT: Upload zone + preview -->
+    <div id="left-panel">
+      <!-- Drop zone -->
+      <div class="upload-zone glass" id="upload-zone"
+           onclick="document.getElementById('upload-input').click()"
+           ondrop="handleDrop(event)"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)">
+        <div class="uz-icon">📤</div>
+        <div class="uz-title">Kéo thả ảnh vào đây</div>
+        <div class="uz-sub">hoặc nhấn để chọn file</div>
+        <div class="uz-hint">Hỗ trợ: JPG, PNG, WEBP, BMP — tối đa 16 MB</div>
+        <div class="uz-hint">💡 Có thể dán ảnh từ clipboard (Ctrl+V)</div>
+        <input type="file" id="upload-input" accept="image/*" onchange="handleFileSelect(event)">
+      </div>
+
+      <!-- Preview (hidden until image selected) -->
+      <div class="preview-panel hidden" id="preview-panel">
+        <img id="preview-img" src="" alt="Ảnh đã chọn">
+        <div class="preview-overlay">
+          <button class="preview-change-btn" onclick="resetImage()">✕ Đổi ảnh</button>
         </div>
-    </nav>
+      </div>
+    </div>
 
-    <!-- HERO -->
-    <section class="hero-band">
-        <div class="hero-inner">
-            <div class="hero-dots">
-                <span class="dot dot-pink"></span>
-                <span class="dot dot-yellow"></span>
-                <span class="dot dot-teal"></span>
-                <span class="dot dot-orange"></span>
-                <span class="dot dot-purple"></span>
-            </div>
-            <h1 class="hero-title">Phát hiện bệnh da liễu</h1>
-            <p class="hero-subtitle">Upload ảnh vùng da — AI phân tích và đưa ra dự đoán kèm heatmap giải thích.</p>
-        </div>
-    </section>
+    <!-- RIGHT: Results -->
+    <div id="right-panel">
 
-    <!-- MAIN -->
-    <main class="main-content">
-        <div class="content-grid">
+      <!-- Placeholder trước khi phân tích -->
+      <div class="glass result-placeholder" id="result-placeholder">
+        <div class="ph-icon">🩺</div>
+        <div>Kết quả chẩn đoán sẽ hiển thị ở đây</div>
+        <div style="font-size:0.78rem; color:var(--clr-text-dim)">Vui lòng upload ảnh và nhấn Phân tích</div>
+      </div>
 
-            <!-- LEFT: Upload -->
-            <div class="upload-section">
-                <div class="card-feature">
-                    <h3 class="heading-4">Upload ảnh</h3>
-                    <p class="body-sm steel">Chấp nhận JPG, PNG. Tối đa 16MB.</p>
+      <!-- Spinner (trong khi chờ) -->
+      <div class="glass spinner-wrap hidden" id="loading-panel">
+        <div class="spinner"></div>
+        <div>Đang phân tích ảnh...</div>
+        <div style="font-size:0.78rem; color:var(--clr-text-dim)">Quá trình này có thể mất 5-15 giây</div>
+      </div>
 
-                    <div class="upload-zone" id="uploadZone">
-                        <div class="upload-icon">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                                <rect width="48" height="48" rx="12" fill="#e6e0f5"/>
-                                <path d="M24 16v16M16 24h16" stroke="#5645d4" stroke-width="2.5" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                        <p class="body-md charcoal">Kéo thả ảnh vào đây</p>
-                        <p class="body-sm steel">hoặc nhấn để chọn file</p>
-                        <input type="file" id="fileInput" accept="image/*" hidden>
-                    </div>
+      <!-- Result content -->
+      <div class="result-panel hidden" id="result-content">
 
-                    <div class="preview-wrapper" id="previewWrapper" style="display:none;">
-                        <div class="preview-card">
-                            <img id="previewImg" src="" alt="Preview">
-                            <button class="btn-ghost" id="clearBtn">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                Xóa ảnh
-                            </button>
-                        </div>
-                    </div>
-
-                    <button class="btn-primary" id="analyzeBtn" disabled>
-                        <span class="btn-text">Phân tích ảnh</span>
-                        <span class="btn-loading" style="display:none;">
-                            <span class="spinner"></span>Đang phân tích...
-                        </span>
-                    </button>
-                </div>
-
-                <div class="card-warning">
-                    <div class="warning-icon">⚠️</div>
-                    <div>
-                        <p class="body-sm-medium charcoal">Lưu ý quan trọng</p>
-                        <p class="caption steel">Kết quả chỉ mang tính tham khảo, không thay thế chẩn đoán bác sĩ. Dataset chủ yếu ảnh da trắng — độ chính xác có thể thấp hơn với da vàng/da tối.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT: Results -->
-            <div class="results-section">
-                <!-- Empty state -->
-                <div class="results-empty" id="emptyState">
-                    <div class="empty-icon">
-                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                            <rect width="64" height="64" rx="16" fill="#f6f5f4"/>
-                            <circle cx="32" cy="28" r="10" stroke="#a4a097" stroke-width="2"/>
-                            <path d="M22 46c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#a4a097" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="heading-5 steel">Chưa có kết quả</h3>
-                    <p class="body-sm stone">Upload ảnh và nhấn "Phân tích" để bắt đầu</p>
-                </div>
-
-                <!-- Results -->
-                <div id="resultsCard" style="display:none;">
-
-                    <!-- Low confidence warning -->
-                    <div id="lowConfWarning" class="card-warning" style="display:none; margin-bottom:16px;">
-                        <div class="warning-icon">⚠️</div>
-                        <div>
-                            <p class="body-sm-medium charcoal">Độ tin cậy thấp</p>
-                            <p class="caption steel">Model không tự tin về kết quả này (dưới 60%). Hãy thử ảnh rõ hơn hoặc chụp gần vùng tổn thương hơn.</p>
-                        </div>
-                    </div>
-
-                    <!-- Top prediction -->
-                    <div class="top-prediction" id="topPrediction">
-                        <div class="top-prediction-header">
-                            <span class="badge-purple">Dự đoán hàng đầu</span>
-                        </div>
-                        <div class="top-prediction-body">
-                            <span class="top-icon" id="topIcon"></span>
-                            <div>
-                                <h2 class="heading-3" id="topClassVi"></h2>
-                                <p class="body-sm steel" id="topClassEn"></p>
-                            </div>
-                        </div>
-                        <div class="confidence-bar-wrapper">
-                            <div class="confidence-bar">
-                                <div class="confidence-fill" id="topConfFill"></div>
-                            </div>
-                            <span class="confidence-label heading-4" id="topConfLabel"></span>
-                        </div>
-                    </div>
-
-                    <!-- Top-5 -->
-                    <div class="all-predictions" style="margin-top:16px;">
-                        <h4 class="heading-5">Top 5 dự đoán</h4>
-                        <div class="prediction-list" id="predictionList"></div>
-                    </div>
-
-             
-                    <div class="gradcam-section" id="gradcamSection" style="margin-top:16px;">
-                        <div class="gradcam-header">
-                            <h4 class="heading-5">🔍 Grad-CAM — Vùng AI tập trung</h4>
-                            <p class="body-sm steel">Màu đỏ/vàng = AI chú ý nhiều &nbsp;|&nbsp; Màu xanh = ít chú ý</p>
-                        </div>
-                        <div class="gradcam-images">
-                            <div class="gradcam-img-wrap">
-                                <p class="caption steel" style="text-align:center; margin-bottom:6px;">Ảnh gốc</p>
-                                <img id="originalImg" src="" alt="Original" class="gradcam-img">
-                            </div>
-                            <div class="gradcam-img-wrap">
-                                <p class="caption steel" style="text-align:center; margin-bottom:6px;">Heatmap overlay</p>
-                                <img id="gradcamImg" src="" alt="Grad-CAM" class="gradcam-img">
-                            </div>
-                        </div>
-                        <p class="caption stone" style="margin-top:8px;">
-                            Nếu vùng đỏ tập trung vào tổn thương da --> model học đúng.
-                            Nếu tập trung vào nền ảnh --> kết quả kém tin cậy hơn.
-                        </p>
-                    </div>
-
-                </div>
-            </div>
+        <!-- Top 3 chẩn đoán -->
+        <div class="glass top3-section" style="padding:1.25rem">
+          <div class="section-label">🏆 Top 3 chẩn đoán</div>
+          <div id="top3-list"></div>
+          <div id="low-conf-alert" class="low-conf-alert hidden">
+            ⚠️ Độ tin cậy thấp — ảnh có thể không rõ ràng hoặc không khớp với các bệnh trong hệ thống.
+          </div>
         </div>
 
-        <!-- Disease grid -->
-        <section class="disease-grid-section">
-            <h3 class="heading-4">11 bệnh được hỗ trợ</h3>
-            <div class="disease-grid">
-                {% for cls in classes %}
-                {% set d = display.get(cls, {"vi": cls, "icon": "❓"}) %}
-                <div class="disease-chip">
-                    <span class="disease-chip-icon">{{ d.icon }}</span>
-                    <div>
-                        <span class="body-sm-medium charcoal">{{ d.vi }}</span>
-                        <span class="caption steel">{{ cls }}</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-    </main>
+        <!-- Grad-CAM -->
+        <div class="glass gradcam-section" style="padding:1.25rem" id="gradcam-section">
+          <div class="section-label">🔍 Grad-CAM — Vùng AI đang chú ý</div>
+          <div class="gradcam-toggle">
+            <button class="toggle-btn active" id="toggle-original" onclick="showOriginal()">Ảnh gốc</button>
+            <button class="toggle-btn" id="toggle-gradcam" onclick="showGradcam()">Heatmap</button>
+          </div>
+          <div class="gradcam-img-wrap">
+            <img id="gradcam-display" src="" alt="Grad-CAM">
+          </div>
+          <div class="gradcam-caption">
+            Vùng màu đỏ/vàng = AI tập trung nhiều nhất khi phân tích
+          </div>
+        </div>
 
-    <script>
-        const uploadZone  = document.getElementById('uploadZone');
-        const fileInput   = document.getElementById('fileInput');
-        const previewWrap = document.getElementById('previewWrapper');
-        const previewImg  = document.getElementById('previewImg');
-        const analyzeBtn  = document.getElementById('analyzeBtn');
-        const clearBtn    = document.getElementById('clearBtn');
-        const emptyState  = document.getElementById('emptyState');
-        const resultsCard = document.getElementById('resultsCard');
+      </div><!-- /#result-content -->
+    </div><!-- /#right-panel -->
+  </div><!-- /.split-layout -->
+</div>
+{% endblock %}
 
-        let selectedFile = null;
-
-        uploadZone.addEventListener('click', () => fileInput.click());
-        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault(); uploadZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
-        clearBtn.addEventListener('click', clearSelection);
-
-        function handleFile(file) {
-            if (!file.type.startsWith('image/')) { alert('Vui lòng chọn file ảnh'); return; }
-            selectedFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                uploadZone.style.display = 'none';
-                previewWrap.style.display = 'block';
-                analyzeBtn.disabled = false;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function clearSelection() {
-            selectedFile = null;
-            fileInput.value = '';
-            previewImg.src = '';
-            uploadZone.style.display = 'flex';
-            previewWrap.style.display = 'none';
-            analyzeBtn.disabled = true;
-            resultsCard.style.display = 'none';
-            emptyState.style.display  = 'flex';
-        }
-
-        analyzeBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
-            const btnText = analyzeBtn.querySelector('.btn-text');
-            const btnLoad = analyzeBtn.querySelector('.btn-loading');
-            btnText.style.display = 'none';
-            btnLoad.style.display = 'inline-flex';
-            analyzeBtn.disabled = true;
-
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            try {
-                const res  = await fetch('/predict', { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                showResults(data);
-            } catch (err) {
-                alert('Lỗi kết nối server: ' + err.message);
-            } finally {
-                btnText.style.display = 'inline';
-                btnLoad.style.display = 'none';
-                analyzeBtn.disabled   = false;
-            }
-        });
-
-        function showResults(data) {
-            emptyState.style.display  = 'none';
-            resultsCard.style.display = 'block';
-
-            // Low confidence warning
-            document.getElementById('lowConfWarning').style.display =
-                data.low_confidence ? 'flex' : 'none';
-
-            // Top prediction
-            const top = data.top;
-            document.getElementById('topIcon').textContent     = top.icon;
-            document.getElementById('topClassVi').textContent  = top.class_vi;
-            document.getElementById('topClassEn').textContent  = top.class_en;
-            document.getElementById('topConfLabel').textContent = top.confidence + '%';
-
-            const fill = document.getElementById('topConfFill');
-            fill.style.width = '0%';
-            requestAnimationFrame(() => { fill.style.width = top.confidence + '%'; });
-
-            const topCard = document.getElementById('topPrediction');
-            topCard.className = 'top-prediction ' + (
-                top.confidence >= 70 ? 'conf-high' :
-                top.confidence >= 40 ? 'conf-mid'  : 'conf-low'
-            );
-
-            // Top-5 list
-            const list = document.getElementById('predictionList');
-            list.innerHTML = '';
-            data.results.forEach((r, i) => {
-                const row = document.createElement('div');
-                row.className = 'prediction-row' + (i === 0 ? ' top-row' : '');
-                row.innerHTML = `
-                    <span class="pred-rank">${i + 1}</span>
-                    <span class="pred-icon">${r.icon}</span>
-                    <div class="pred-info">
-                        <span class="body-sm-medium charcoal">${r.class_vi}</span>
-                        <span class="caption steel">${r.class_en}</span>
-                    </div>
-                    <div class="pred-bar-wrap">
-                        <div class="pred-bar">
-                            <div class="pred-bar-fill" style="transition-delay:${i*80}ms"></div>
-                        </div>
-                    </div>
-                    <span class="pred-conf body-sm-medium">${r.confidence}%</span>
-                `;
-                list.appendChild(row);
-                requestAnimationFrame(() => {
-                    row.querySelector('.pred-bar-fill').style.width = r.confidence + '%';
-                });
-            });
-
-            document.getElementById('originalImg').src = data.original_img;
-            document.getElementById('gradcamImg').src  = data.gradcam_img;
-
-            if (window.innerWidth < 768) {
-                resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-    </script>
-</body>
-</html>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/patient.js') }}"></script>
+{% endblock %}

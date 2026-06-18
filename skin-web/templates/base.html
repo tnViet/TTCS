@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SkinScan — Phân tích bệnh da liễu bằng AI, hỗ trợ chẩn đoán hình ảnh nhanh chóng.">
+  <title>{% block title %}SkinScan — AI Chẩn đoán Da liễu{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="{{ url_for('patient.index') }}" class="navbar-brand">
+      <span class="brand-dot"></span>
+      SkinScan
+    </a>
+    <span class="navbar-spacer"></span>
+    <a href="{{ url_for('patient.history') }}" class="nav-link">Tra cứu lịch sử</a>
+    {% if session.get('doctor_id') %}
+      <a href="{{ url_for('doctor.dashboard') }}" class="nav-link">Dashboard</a>
+      <a href="{{ url_for('doctor.logout') }}" class="nav-link">Đăng xuất</a>
+    {% else %}
+      <a href="{{ url_for('doctor.login') }}" class="nav-link-primary">Bác sĩ</a>
+    {% endif %}
+  </nav>
+
+  <!-- Page content -->
+  <main>{% block content %}{% endblock %}</main>
+
+  <!-- Toast container -->
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <!-- Lightbox -->
+  <div class="modal-backdrop hidden" id="lightbox" onclick="closeLightbox(event)">
+    <div class="modal-content">
+      <button class="modal-close" onclick="document.getElementById('lightbox').classList.add('hidden')">✕</button>
+      <img id="lightbox-img" src="" alt="Phóng to">
+    </div>
+  </div>
+
+  <!-- Shared utilities -->
+  <script>
+    function showToast(msg, type='info', ms=3000) {
+      const wrap = document.getElementById('toast-wrap');
+      const t = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.textContent = msg;
+      wrap.appendChild(t);
+      setTimeout(() => t.remove(), ms);
+    }
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.remove('hidden');
+    }
+    function closeLightbox(e) {
+      if (e.target === document.getElementById('lightbox'))
+        document.getElementById('lightbox').classList.add('hidden');
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.getElementById('lightbox').classList.add('hidden');
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
